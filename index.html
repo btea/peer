@@ -7,6 +7,7 @@
         <title>peerconnection</title>
     </head>
     <body>
+        <a href="https://webrtc.org/getting-started/remote-streams">webrtc说明</a>
         <div class="local">
             <button class="local-btn">3</button>
             <div class="local-call">呼叫</div>
@@ -79,7 +80,8 @@
                     if (info.start) {
                         return;
                     }
-
+                    console.log('=========socket==========');
+                    console.log(info);
                     if (info.type && connectionTypes.includes(info.type)) {
                         const _tp = info.type;
 
