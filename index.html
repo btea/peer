@@ -1,200 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>peerconnection</title>
-    </head>
-    <body>
-        <a href="https://webrtc.org/getting-started/remote-streams">webrtc说明</a>
-        <div class="local">
-            <button class="local-btn">3</button>
-            <div class="local-call">呼叫</div>
-            <video src="" id="local"></video>
-        </div>
-        <div class="remote">
-            <button class="remote-btn">4</button>
-            <div class="remote-call">呼叫</div>
-            <video src="" id="remote"></video>
-        </div>
-        <script>
-            let ws,
-                pc,
-                path = 'ws://192.168.124.7:2233';
-            let threeInfo = {
-                avatar: 'https://img2.huashi6.com/images/resource/p10553/2021/07/27/12716_4701640700.jpg?imageView2/3/q/100/interlace/1/w/566/h/380/format/webp',
-                id: 3,
-                nickname: '甘雨',
-                _id: '610665ed8048c54290a7ad17'
-            };
-            let fourInfo = {
-                avatar: 'https://img2.huashi6.com/images/resource/2016/05/04/5669h7596p0.jpg?imageView2/3/q/100/interlace/1/w/1600/h/1600/format/webp',
-                id: 4,
-                nickname: '无名',
-                _id: '610665ed8048c54290a7ad18'
-            };
-            const offerOptions = {
-                offerToReceiveAudio: true,
-                offerToReceiveVideo: true
-            };
-            const connectionTypes = ['candidate', 'createOffer', 'createAnswer'];
-            const localBtn = document.getElementsByClassName('local-btn')[0],
-                remoteBtn = document.getElementsByClassName('remote-btn')[0],
-                localCall = document.getElementsByClassName('local-call')[0],
-                remoteCall = document.getElementsByClassName('remote-call')[0];
-            localBtn.addEventListener('click', (e) => {
-                const id = +e.target.innerText;
-                startLink(id);
-            });
-            remoteBtn.addEventListener('click', (e) => {
-                const id = +e.target.innerText;
-                startLink(id);
-            });
-            localCall.addEventListener('click', () => {
-                createOffer(ws);
-            });
-            remoteCall.addEventListener('click', () => {
-                createOffer(ws);
-            });
 
-            function startLink(id) {
-                ws = new WebSocket(path + '?id=' + id);
-                if (id === 3) {
-                    userInfo = threeInfo;
-                    friendInfo = fourInfo;
-                } else {
-                    userInfo = fourInfo;
-                    friendInfo = threeInfo;
-                }
-                ws.onopen = () => {
-                    console.log('link');
-                };
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>...</title>
+</head>
 
-                ws.onclose = () => {
-                    console.log('close');
-                };
-                ws.onmessage = (evt) => {
-                    const message = evt.data;
-                    const info = JSON.parse(message);
-                    if (info.start) {
-                        return;
-                    }
-                    console.log('=========socket==========');
-                    console.log(info);
-                    if (info.type && connectionTypes.includes(info.type)) {
-                        const _tp = info.type;
+<body>
+    <div class="local">
+        <video src="" id="localVideo"></video>
+        <button id="startButton">开始</button>
+    </div>
+    <div class="remote">
+        <video src="" id="remoteVideo"></video>
+        <button id="callButton">呼叫</button>
+    </div>
+    <button id="hangupButton">挂断</button>
+    <script src="./main.js"></script>
+</body>
 
-                        if (_tp === 'candidate') {
-                            addIceCandidate(info.candidate);
-                            return;
-                        }
-                        if (_tp === 'createOffer') {
-                            receiveOffer(ws, info.offer);
-                            return;
-                        }
-                        if (_tp === 'createAnswer') {
-                            receiveAnswer(info.answer);
-                        }
-                        return;
-                    }
-                };
-                startConnection(ws);
-            }
-            function startConnection(ws) {
-                pc = new window.RTCPeerConnection();
-                pc.onicecandidate = (event) => {
-                    if (!event.candidate) {
-                        return;
-                    }
-                    const params = {
-                        type: 'candidate',
-                        candidate: event.candidate,
-                        from: {
-                            id: userInfo.id,
-                            name: userInfo.nickname,
-                            avatar: userInfo.avatar
-                        },
-                        to: {
-                            id: friendInfo.id,
-                            name: friendInfo.nickname,
-                            avatar: friendInfo.avatar
-                        }
-                    };
-                    ws.send(JSON.stringify(params));
-                };
-                // 接收对方的视频流
-                // pc.onaddstream = event => {};
-            }
-            // 通信双方交换ICE候选路径, 接收到别人发送的过来的 candidate
-            function addIceCandidate(candidate) {
-                console.log(candidate);
-                pc.addIceCandidate(new RTCIceCandidate(candidate));
-            }
-            // 创建邀请
-            function createOffer(ws) {
-                console.log('createOffer');
-                pc.createOffer(offerOptions).then((offer) => {
-                    const params = {
-                        type: 'createOffer',
-                        offer: offer,
-                        from: {
-                            id: userInfo.id,
-                            name: userInfo.nickname,
-                            avatar: userInfo.avatar
-                        },
-                        to: {
-                            id: friendInfo.id,
-                            name: friendInfo.nickname,
-                            avatar: friendInfo.avatar
-                        }
-                    };
-                    pc.setLocalDescription(offer);
-                    ws.send(JSON.stringify(params));
-                });
-            }
-            // 接收到了别人发来的邀请，要进行设置
-            // 接收别人的邀请进行应答
-            function receiveOffer(ws, offer) {
-                console.log('receiveoffer');
-                pc.setRemoteDescription(offer);
-                pc.createAnswer(offerOptions).then((answer) => {
-                    pc.setLocalDescription(answer);
-                    const params = {
-                        type: 'createAnswer',
-                        answer: answer,
-                        from: {
-                            id: userInfo.id,
-                            name: userInfo.nickname,
-                            avatar: userInfo.avatar
-                        },
-                        to: {
-                            id: friendInfo.id,
-                            name: friendInfo.nickname,
-                            avatar: friendInfo.avatar
-                        }
-                    };
-                    ws.send(JSON.stringify(params));
-                });
-            }
-
-            function receiveAnswer(answer) {
-                console.log('receiverAnswer');
-                console.log('已经建立连接');
-                // pc.setLocalDescription(answer);
-                getStream();
-            }
-
-            // getStream
-            function getStream() {
-                const constraints = {
-                    video: true,
-                    audio: false
-                };
-                navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-                    document.getElementById('local').srcObject = window.URL.createObjectURL(stream);
-                });
-            }
-        </script>
-    </body>
 </html>
