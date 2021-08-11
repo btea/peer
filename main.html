@@ -24,7 +24,7 @@
     <script>
         let ws,
             pc,
-            path = 'ws://192.168.124.7:2233';
+            path = 'ws://192.168.50.166:2233';
         let threeInfo = {
             avatar: 'https://img2.huashi6.com/images/resource/p10553/2021/07/27/12716_4701640700.jpg?imageView2/3/q/100/interlace/1/w/566/h/380/format/webp',
             id: 3,
@@ -195,7 +195,12 @@
                 audio: false
             };
             navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-                document.getElementById('local').srcObject = window.URL.createObjectURL(stream);
+                // 浏览器已经移除这种写法，现在直接把stream赋值给video的srcObject属性
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/URL/createObjectURL
+                // document.getElementById('local').srcObject = window.URL.createObjectURL(stream);
+                const local = document.getElementById('local');
+                local.srcObject = stream;
+                local.play();
             });
         }
     </script>
